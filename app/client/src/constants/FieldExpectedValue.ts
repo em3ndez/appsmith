@@ -65,6 +65,7 @@ const FIELD_VALUES: Record<
       "Array<{ label: string, id: string(unique), widgetId: string(unique) }>",
     selectedTab: "string",
     isVisible: "boolean",
+    "tabs[$index].isVisible": "boolean",
   },
   CHART_WIDGET: {
     chartName: "string",

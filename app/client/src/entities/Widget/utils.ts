@@ -37,9 +37,12 @@ export const getAllPathsFromPropertyConfig = (
         if (controlConfig.panelConfig) {
           const panelPropertyPath = controlConfig.propertyName;
           const widgetPanelPropertyValues = get(widget, panelPropertyPath);
-          if (widgetPanelPropertyValues) {
-            Object.values(widgetPanelPropertyValues).forEach(
-              (widgetPanelPropertyValue: any) => {
+          const { panelPropertyValues, getPanelPropPath } = getPanelPropUtils(
+            widgetPanelPropertyValues,
+          );
+          if (panelPropertyValues) {
+            panelPropertyValues.forEach(
+              (widgetPanelPropertyValue: any, index: any) => {
                 controlConfig.panelConfig.children.forEach(
                   (panelColumnConfig: any) => {
                     let isSectionHidden = false;
@@ -52,7 +55,12 @@ export const getAllPathsFromPropertyConfig = (
                     if (!isSectionHidden) {
                       panelColumnConfig.children.forEach(
                         (panelColumnControlConfig: any) => {
-                          const panelPropertyPath = `${basePath}.${widgetPanelPropertyValue.id}.${panelColumnControlConfig.propertyName}`;
+                          const panelPropertyPath = getPanelPropPath(
+                            basePath,
+                            widgetPanelPropertyValue.id,
+                            panelColumnControlConfig.propertyName,
+                            index,
+                          );
                           let isControlHidden = false;
                           if ("hidden" in panelColumnControlConfig) {
                             isControlHidden = panelColumnControlConfig.hidden(
@@ -115,6 +123,28 @@ export const getAllPathsFromPropertyConfig = (
   return { bindingPaths, triggerPaths };
 };
 
+export const getPanelPropUtils = (widgetPanelPropertyValues: any) => {
+  const isArray = Array.isArray(widgetPanelPropertyValues);
+  const panelPropertyValues = isArray
+    ? widgetPanelPropertyValues
+    : Object.values(widgetPanelPropertyValues);
+  const getPanelPropPath = isArray
+    ? arrayPanelPropertyPath
+    : objectPanelPropertyPath;
+  return { panelPropertyValues, getPanelPropPath };
+};
+
+const arrayPanelPropertyPath = (
+  basePath: any,
+  id: any,
+  propertyName: any,
+  index: any,
+) => {
+  return `${basePath}[${index}].${propertyName}`;
+};
+const objectPanelPropertyPath = (basePath: any, id: any, propertyName: any) => {
+  return `${basePath}.${id}.${propertyName}`;
+};
 export const nextAvailableRowInContainer = (
   parenContainertId: string,
   canvasWidgets: { [widgetId: string]: FlattenedWidgetProps },

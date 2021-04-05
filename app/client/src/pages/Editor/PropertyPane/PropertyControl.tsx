@@ -30,6 +30,7 @@ import Boxed from "components/editorComponents/Onboarding/Boxed";
 import { OnboardingStep } from "constants/OnboardingConstants";
 import Indicator from "components/editorComponents/Onboarding/Indicator";
 import { EditorTheme } from "components/editorComponents/CodeEditor/EditorConfig";
+import { checkForDynamicSubProperty } from "workers/evaluationUtils";
 
 type Props = PropertyPaneControlConfig & {
   panel: IPanelProps;
@@ -177,6 +178,7 @@ const PropertyControl = memo((props: Props) => {
 
     const { isValid, validationMessage } = getPropertyValidation(propertyName);
     const { additionalAutoComplete, ...rest } = props;
+    const convertedProp = checkForDynamicSubProperty(propertyName);
     const config = {
       ...rest,
       isValid,
@@ -188,7 +190,7 @@ const PropertyControl = memo((props: Props) => {
       parentPropertyName: propertyName,
       parentPropertyValue: propertyValue,
       expected: FIELD_EXPECTED_VALUE[widgetProperties.type as WidgetType][
-        propertyName
+        convertedProp
       ] as any,
     };
     if (isPathADynamicTrigger(widgetProperties, propertyName)) {

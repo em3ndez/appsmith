@@ -243,6 +243,17 @@ export const getImmediateParentsOfPropertyPaths = (
   return Array.from(parents);
 };
 
+const IndexedSubPropertyRegex = /([a-zA-Z0-9]*)\[\d].([a-zA-Z0-9]*)/;
+
+export function checkForDynamicSubProperty(property: string): string {
+  const isIndexedSubProperty = IndexedSubPropertyRegex.test(property);
+  if (isIndexedSubProperty) {
+    return property.replace(/\[\d]/, "[$index]");
+  } else {
+    return property;
+  }
+}
+
 export function validateWidgetProperty(
   widgetConfigMap: WidgetTypeConfigMap,
   widgetType: WidgetType,
@@ -252,7 +263,8 @@ export function validateWidgetProperty(
   dataTree?: DataTree,
 ) {
   const propertyValidationTypes = widgetConfigMap[widgetType].validations;
-  const validationTypeOrValidator = propertyValidationTypes[property];
+  const parsedProp = checkForDynamicSubProperty(property);
+  const validationTypeOrValidator = propertyValidationTypes[parsedProp];
   let validator;
 
   if (typeof validationTypeOrValidator === "function") {

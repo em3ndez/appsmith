@@ -101,7 +101,10 @@ import {
   getAllPathsFromPropertyConfig,
   nextAvailableRowInContainer,
 } from "entities/Widget/utils";
-import { getAllPaths } from "workers/evaluationUtils";
+import {
+  checkForDynamicSubProperty,
+  getAllPaths,
+} from "workers/evaluationUtils";
 import {
   createMessage,
   ERROR_ADD_WIDGET_FROM_QUERY,
@@ -798,12 +801,13 @@ function* setWidgetDynamicPropertySaga(
 ) {
   const { isDynamic, propertyPath, widgetId } = action.payload;
   const stateWidget: WidgetProps = yield select(getWidget, widgetId);
-  let widget = { ...stateWidget };
+  let widget = cloneDeep(stateWidget);
   const propertyValue = _.get(widget, propertyPath);
   let dynamicPropertyPathList = getWidgetDynamicPropertyPathList(widget);
   if (isDynamic) {
+    const convertedProp = checkForDynamicSubProperty(propertyPath);
     const keyExists =
-      dynamicPropertyPathList.findIndex((path) => path.key === propertyPath) >
+      dynamicPropertyPathList.findIndex((path) => path.key === convertedProp) >
       -1;
     if (!keyExists) {
       dynamicPropertyPathList.push({

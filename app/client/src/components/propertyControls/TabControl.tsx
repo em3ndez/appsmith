@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import BaseControl, { ControlProps } from "./BaseControl";
 import {
-  StyledHiddenIcon,
   StyledInputGroup,
   StyledPropertyPaneButton,
-  StyledVisibleIcon,
   StyledDragIcon,
   StyledDeleteIcon,
+  StyledEditIcon,
 } from "./StyledControls";
 import styled from "constants/DefaultTheme";
 import { generateReactKey } from "utils/generators";
@@ -63,12 +62,12 @@ type RenderComponentProps = {
   deleteOption: (index: number) => void;
   updateOption: (index: number, value: string) => void;
   toggleVisibility?: (index: number) => void;
+  onEdit?: (props: any) => void;
 };
 
 function TabControlComponent(props: RenderComponentProps) {
-  const { deleteOption, updateOption, item, index, toggleVisibility } = props;
+  const { deleteOption, updateOption, item, index } = props;
   const debouncedUpdate = debounce(updateOption, 1000);
-  const [visibility, setVisibility] = useState(item.isVisible);
   return (
     <ItemWrapper>
       <StyledDragIcon height={20} width={20} />
@@ -89,29 +88,12 @@ function TabControlComponent(props: RenderComponentProps) {
           deleteOption(index);
         }}
       />
-      {visibility || visibility === undefined ? (
-        <StyledVisibleIcon
-          className="t--show-tab-btn"
-          height={20}
-          width={20}
-          marginRight={36}
-          onClick={() => {
-            setVisibility(!visibility);
-            toggleVisibility && toggleVisibility(index);
-          }}
-        />
-      ) : (
-        <StyledHiddenIcon
-          className="t--show-tab-btn"
-          height={20}
-          width={20}
-          marginRight={36}
-          onClick={() => {
-            setVisibility(!visibility);
-            toggleVisibility && toggleVisibility(index);
-          }}
-        />
-      )}
+      <StyledEditIcon
+        className="t--edit-column-btn"
+        height={20}
+        width={20}
+        onClick={() => props.onEdit && props.onEdit(index)}
+      />
     </ItemWrapper>
   );
 }
@@ -152,6 +134,19 @@ class TabControl extends BaseControl<ControlProps> {
     this.updateProperty(this.props.propertyName, items);
   };
 
+  onEdit = (index: number) => {
+    const tabs: Array<{
+      id: string;
+      label: string;
+    }> = this.props.propertyValue;
+    const tabToChange = tabs[index];
+    this.props.openNextPanel({
+      index,
+      ...tabToChange,
+      propPaneId: this.props.widgetProperties.widgetId,
+    });
+  };
+
   render() {
     const tabs: Array<{
       id: string;
@@ -167,6 +162,7 @@ class TabControl extends BaseControl<ControlProps> {
           updateOption={this.updateOption}
           updateItems={this.updateItems}
           toggleVisibility={this.toggleVisibility}
+          onEdit={this.onEdit}
         />
         <StyledPropertyPaneButtonWrapper>
           <StyledPropertyPaneButton

@@ -24,11 +24,44 @@ class TabsWidget extends BaseWidget<
           {
             helpText: "Takes an array of tab names to render tabs",
             propertyName: "tabs",
-            isJSConvertible: true,
+            isJSConvertible: false,
             label: "Tabs",
             controlType: "TABS_INPUT",
             isBindProperty: true,
             isTriggerProperty: false,
+            panelConfig: {
+              editableTitle: true,
+              titlePropertyName: "label",
+              panelIdPropertyName: "id",
+              updateHook: (
+                props: any,
+                propertyPath: string,
+                propertyValue: string,
+              ) => {
+                return [
+                  {
+                    propertyPath,
+                    propertyValue,
+                  },
+                ];
+              },
+              children: [
+                {
+                  sectionName: "Tab Control",
+                  children: [
+                    {
+                      propertyName: "isVisible",
+                      label: "Visible",
+                      helpText: "Controls the visibility of the widget",
+                      controlType: "SWITCH",
+                      isJSConvertible: true,
+                      isBindProperty: true,
+                      isTriggerProperty: false,
+                    },
+                  ],
+                },
+              ],
+            },
           },
           {
             propertyName: "defaultTab",
@@ -86,6 +119,8 @@ class TabsWidget extends BaseWidget<
     return {
       tabs: VALIDATION_TYPES.TABS_DATA,
       defaultTab: VALIDATION_TYPES.SELECTED_TAB,
+      isVisible: VALIDATION_TYPES.BOOLEAN,
+      "tabs[$index].isVisible": VALIDATION_TYPES.BOOLEAN,
     };
   }
 
