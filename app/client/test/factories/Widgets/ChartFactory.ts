@@ -1,12 +1,12 @@
 import * as Factory from "factory.ts";
 import { generateReactKey } from "utils/generators";
-import { WidgetProps } from "widgets/BaseWidget";
+import type { WidgetProps } from "widgets/BaseWidget";
 
 export const ChartFactory = Factory.Sync.makeFactory<WidgetProps>({
   isVisible: true,
   chartType: "LINE_CHART",
   chartName: "Sales on working days",
-  allowHorizontalScroll: false,
+  allowScroll: false,
   chartData: [
     {
       seriesName: "Sales",

@@ -1,4 +1,5 @@
-import { ReduxActionTypes, ReduxAction } from "constants/ReduxActionConstants";
+import type { ReduxAction } from "actions/ReduxActionTypes";
+import { ReduxActionTypes } from "ee/constants/ReduxActionConstants";
 import {
   all,
   call,
@@ -13,17 +14,32 @@ import {
   restoreRecentEntitiesSuccess,
   setRecentEntities,
 } from "actions/globalSearchActions";
-import { AppState } from "reducers";
-import { getIsEditorInitialized } from "selectors/editorSelectors";
-import { RecentEntity } from "components/editorComponents/GlobalSearch/utils";
+import type { AppState } from "ee/reducers";
+import {
+  getCurrentApplicationId,
+  getIsEditorInitialized,
+} from "selectors/editorSelectors";
+import type { RecentEntity } from "components/editorComponents/GlobalSearch/utils";
 import log from "loglevel";
+import type { FocusEntity, FocusEntityInfo } from "navigation/FocusEntity";
+import { convertToPageIdSelector } from "selectors/pageListSelectors";
+import { selectGitApplicationCurrentBranch } from "selectors/gitModSelectors";
 
-export function* updateRecentEntity(actionPayload: ReduxAction<RecentEntity>) {
+const getRecentEntitiesKey = (applicationId: string, branch?: string) =>
+  branch ? `${applicationId}-${branch}` : applicationId;
+
+export function* updateRecentEntitySaga(entityInfo: FocusEntityInfo) {
   try {
-    const recentEntitiesRestored = yield select(
+    const applicationId: string = yield select(getCurrentApplicationId);
+
+    const branch: string | undefined = yield select(
+      selectGitApplicationCurrentBranch,
+    );
+
+    const recentEntitiesRestored: boolean = yield select(
       (state: AppState) => state.ui.globalSearch.recentEntitiesRestored,
     );
-    const isEditorInitialised = yield select(getIsEditorInitialized);
+    const isEditorInitialised: boolean = yield select(getIsEditorInitialized);
 
     const waitForEffects = [];
 
@@ -39,26 +55,40 @@ export function* updateRecentEntity(actionPayload: ReduxAction<RecentEntity>) {
 
     yield all(waitForEffects);
 
-    const { payload: entity } = actionPayload;
-    let recentEntities = yield select(
+    const {
+      entity,
+      id,
+      params: { basePageId },
+    } = entityInfo;
+    const pageId: string = yield select(
+      convertToPageIdSelector,
+      basePageId ?? "",
+    );
+    let recentEntities: RecentEntity[] = yield select(
       (state: AppState) => state.ui.globalSearch.recentEntities,
     );
 
     recentEntities = recentEntities.slice();
 
     recentEntities = recentEntities.filter(
-      (recentEntity: { type: string; id: string }) =>
-        recentEntity.id !== entity.id,
+      (recentEntity: { type: FocusEntity; id: string }) =>
+        recentEntity.id !== id,
     );
-    recentEntities.unshift(entity);
+
+    recentEntities.unshift(<RecentEntity>{
+      type: entity,
+      id,
+      pageId,
+    });
     recentEntities = recentEntities.slice(0, 6);
 
     yield put(setRecentEntities(recentEntities));
-    if (entity?.params?.applicationId) {
+
+    if (applicationId) {
       yield call(
         setRecentAppEntities,
         recentEntities,
-        entity?.params?.applicationId,
+        getRecentEntitiesKey(applicationId, branch),
       );
     }
   } catch (e) {
@@ -66,16 +96,23 @@ export function* updateRecentEntity(actionPayload: ReduxAction<RecentEntity>) {
   }
 }
 
-export function* restoreRecentEntities(actionPayload: ReduxAction<string>) {
-  const { payload: appId } = actionPayload;
-  const recentAppEntities = yield call(fetchRecentAppEntities, appId);
+export function* restoreRecentEntities(
+  actionPayload: ReduxAction<{ applicationId: string; branch?: string }>,
+) {
+  const {
+    payload: { applicationId, branch },
+  } = actionPayload;
+  const recentAppEntities: RecentEntity[] = yield call(
+    fetchRecentAppEntities,
+    getRecentEntitiesKey(applicationId, branch),
+  );
+
   yield putResolve(setRecentEntities(recentAppEntities));
   yield put(restoreRecentEntitiesSuccess());
 }
 
 export default function* globalSearchSagas() {
   yield all([
-    takeLatest(ReduxActionTypes.UPDATE_RECENT_ENTITY, updateRecentEntity),
     takeLatest(
       ReduxActionTypes.RESTORE_RECENT_ENTITIES_REQUEST,
       restoreRecentEntities,

@@ -1,5 +1,6 @@
 import styled, { css } from "styled-components";
-import { Intent, Skin } from "constants/DefaultTheme";
+import type { Intent } from "constants/DefaultTheme";
+import { Skin } from "constants/DefaultTheme";
 
 export const DropdownTrigger = styled.div<{ skin: Skin }>`
   display: flex;
@@ -23,23 +24,27 @@ export const DropdownTrigger = styled.div<{ skin: Skin }>`
         props.skin === Skin.DARK
           ? props.theme.colors.textOnDarkBG
           : props.skin === Skin.LIGHT
-          ? props.theme.colors.defaultText
-          : "initial"};
+            ? props.theme.colors.defaultText
+            : "initial"};
     }
     &:hover {
       background: inherit;
     }
   }
 `;
-export const DropdownContent = styled.div<{ skin: Skin }>`
+export const DropdownContent = styled.div<{
+  skin: Skin;
+  borderRadius?: string;
+}>`
   &&& * {
     font-size: ${(props) => props.theme.fontSizes[3]}px;
   }
   border: 0px;
   border-color: ${(props) => props.theme.dropdown[props.skin].border};
-  background: ${(props) => props.theme.dropdown[props.skin].inActiveBG};
+  background: ${(props) => props.theme.dropdown[props.skin].background};
   max-height: 300px;
   overflow-y: auto;
+  border-radius: ${(props) => `min(0.375rem, ${props.borderRadius || "0"})`};
 `;
 
 export const DropdownContentSection = styled.div<{
@@ -47,7 +52,7 @@ export const DropdownContentSection = styled.div<{
   skin: Skin;
 }>`
   position: ${(props) => (props.stick ? "sticky" : "relative")};
-  background: ${(props) => props.theme.dropdown[props.skin].inActiveBG};
+  background: ${(props) => props.theme.dropdown[props.skin].background};
   z-index: ${(props) => (props.stick ? 1 : 0)};
   padding: 8px 0;
   &&&&& .bp3-icon {
@@ -98,7 +103,6 @@ export const Option = styled.div<{
     margin: 0;
   }
   cursor: pointer;
-  background: ${(props) => props.theme.dropdown[props.skin].inActiveBG};
   color: ${(props) => props.theme.dropdown[props.skin].inActiveText};
   &:hover {
     ${(props) => (!props.disabled ? highlightOption : ``)};

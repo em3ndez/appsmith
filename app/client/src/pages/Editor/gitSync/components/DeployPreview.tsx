@@ -1,62 +1,79 @@
 import React from "react";
-import {
-  Subtitle,
-  Title,
-} from "pages/Editor/gitSync/components/StyledComponents";
-import styled from "styled-components";
-import Button, { Category, Size } from "components/ads/Button";
 
-import { getCurrentApplicationId } from "selectors/editorSelectors";
-// import AnalyticsUtil from "utils/AnalyticsUtil";
-import { getApplicationViewerPageURL } from "constants/routes";
-import { useSelector } from "store";
-import { getCurrentPageId } from "selectors/editorSelectors";
+import styled from "styled-components";
+import { useSelector } from "react-redux";
 import {
-  CHECK_DP,
-  LATEST_DP_TITLE,
-  LATEST_DP_SUBTITLE,
+  getApplicationLastDeployedAt,
+  getCurrentBasePageId,
+} from "selectors/editorSelectors";
+import {
   createMessage,
-} from "constants/messages";
+  LATEST_DP_SUBTITLE,
+  LATEST_DP_TITLE,
+} from "ee/constants/messages";
+import SuccessTick from "pages/common/SuccessTick";
+import { howMuchTimeBeforeText } from "utils/helpers";
+import AnalyticsUtil from "ee/utils/AnalyticsUtil";
+import { viewerURL } from "ee/RouteBuilder";
+import { Link, Text } from "@appsmith/ads";
+import { importSvg } from "@appsmith/ads-old";
+
+const CloudyIcon = importSvg(
+  async () => import("assets/icons/ads/cloudy-line.svg"),
+);
 
 const Container = styled.div`
   display: flex;
   flex: 1;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  gap: ${(props) => props.theme.spaces[6]}px;
 
-  justify-content: flex-end;
-  /* bottom: ${(props) => `${props.theme.spaces[8]}px`}; */
-  bottom: 30px;
-  width: calc(100% - 30px);
-  position: absolute;
+  .cloud-icon {
+    stroke: var(--ads-v2-color-fg);
+  }
 `;
 
-const Separator = styled.div`
-  height: 1px;
-  width: 85%;
-  background-color: ${(props) => props.theme.colors.gitSyncModal.separator};
-`;
+export default function DeployPreview(props: { showSuccess: boolean }) {
+  const basePageId = useSelector(getCurrentBasePageId);
+  const lastDeployedAt = useSelector(getApplicationLastDeployedAt);
 
-export default function DeployPreview() {
-  const applicationId = useSelector(getCurrentApplicationId);
-  const pageId = useSelector(getCurrentPageId);
   const showDeployPreview = () => {
-    const path = getApplicationViewerPageURL(applicationId, pageId);
+    AnalyticsUtil.logEvent("GS_LAST_DEPLOYED_PREVIEW_LINK_CLICK", {
+      source: "GIT_DEPLOY_MODAL",
+    });
+    const path = viewerURL({
+      basePageId,
+    });
+
     window.open(path, "_blank");
   };
 
-  return (
-    <Container>
-      <Separator />
-      <Title>{createMessage(LATEST_DP_TITLE)}</Title>
-      <Subtitle>{createMessage(LATEST_DP_SUBTITLE)}</Subtitle>
-      <Button
-        category={Category.tertiary}
-        onClick={showDeployPreview}
-        size={Size.medium}
-        text={createMessage(CHECK_DP)}
-        width="max-content"
-      />
+  const lastDeployedAtMsg = lastDeployedAt
+    ? `${createMessage(LATEST_DP_SUBTITLE)} ${howMuchTimeBeforeText(
+        lastDeployedAt,
+        {
+          lessThanAMinute: true,
+        },
+      )} ago`
+    : "";
+
+  return lastDeployedAt ? (
+    <Container className="t--git-deploy-preview">
+      <div>
+        {props.showSuccess ? (
+          <SuccessTick height="30px" width="30px" />
+        ) : (
+          <CloudyIcon className="cloud-icon" />
+        )}
+      </div>
+      <div>
+        <Link endIcon="right-arrow" onClick={showDeployPreview}>
+          {createMessage(LATEST_DP_TITLE)}
+        </Link>
+        <Text color="var(--ads-v2-color-fg-muted)" kind="body-s">
+          {lastDeployedAtMsg}
+        </Text>
+      </div>
     </Container>
-  );
+  ) : null;
 }
